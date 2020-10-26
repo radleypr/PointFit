@@ -87,14 +87,16 @@
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define DEVICE_NAME                     "Nordic_UART"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "PointFit"                               /**< Name of device. Will be included in the advertising data. */
 #define NUS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
 #define APP_BLE_OBSERVER_PRIO           3                                           /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 
-#define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
+//#define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
+
+#define APP_ADV_DURATION                0
 
 #define MIN_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(75, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
@@ -109,9 +111,10 @@
 #define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
-#define SAADC_SAMPLES_IN_BUFFER         4
-#define SAADC_SAMPLE_RATE               250                                         /**< SAADC sample rate in ms. */               
+#define SAADC_SAMPLES_IN_BUFFER         1
+#define SAADC_SAMPLE_RATE               1000                                         /**< SAADC sample rate in ms. */               
 
+uint32_t GPIO_OUTPUT_LED = 8;
 
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
@@ -629,7 +632,7 @@ static void advertising_init(void)
 
     init.advdata.name_type          = BLE_ADVDATA_FULL_NAME;
     init.advdata.include_appearance = false;
-    init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
+    init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
 
     init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     init.srdata.uuids_complete.p_uuids  = m_adv_uuids;
@@ -773,11 +776,13 @@ void saadc_callback(nrf_drv_saadc_evt_t const * p_event)
          // Send data over BLE via NUS service. Create string from samples and send string with correct length.
         uint8_t nus_string[50];
         bytes_to_send = sprintf(nus_string, 
-                                "CH0: %d\r\nCH1: %d\r\nCH2: %d\r\nCH3: %d",
-                                p_event->data.done.p_buffer[0],
-                                p_event->data.done.p_buffer[1],
-                                p_event->data.done.p_buffer[2],
-                                p_event->data.done.p_buffer[3]);
+//                                "CH0: %d\r\nCH1: %d\r\nCH2: %d\r\nCH3: %d",
+                                "CH0: %d\r\n",
+                                p_event->data.done.p_buffer[0]);
+//                                p_event->data.done.p_buffer[0],
+//                                p_event->data.done.p_buffer[1],
+//                                p_event->data.done.p_buffer[2],
+//                                p_event->data.done.p_buffer[3]);
 
         err_code = ble_nus_data_send(&m_nus, nus_string, &bytes_to_send, m_conn_handle);
         if ((err_code != NRF_ERROR_INVALID_STATE) && (err_code != NRF_ERROR_NOT_FOUND))
@@ -797,42 +802,42 @@ void saadc_init(void)
     nrf_drv_saadc_config_t saadc_config = NRF_DRV_SAADC_DEFAULT_CONFIG;
     saadc_config.resolution = NRF_SAADC_RESOLUTION_12BIT;
 	
-    nrf_saadc_channel_config_t channel_0_config =
-        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN4);
-    channel_0_config.gain = NRF_SAADC_GAIN1_4;
-    channel_0_config.reference = NRF_SAADC_REFERENCE_VDD4;
+//    nrf_saadc_channel_config_t channel_0_config =
+//        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN4);
+//    channel_0_config.gain = NRF_SAADC_GAIN1_4;
+//    channel_0_config.reference = NRF_SAADC_REFERENCE_VDD4;
 	
     nrf_saadc_channel_config_t channel_1_config =
         NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN5);
     channel_1_config.gain = NRF_SAADC_GAIN1_4;
     channel_1_config.reference = NRF_SAADC_REFERENCE_VDD4;
 	
-    nrf_saadc_channel_config_t channel_2_config =
-        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN6);
-    channel_2_config.gain = NRF_SAADC_GAIN1_4;
-    channel_2_config.reference = NRF_SAADC_REFERENCE_VDD4;
+//    nrf_saadc_channel_config_t channel_2_config =
+//        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN6);
+//    channel_2_config.gain = NRF_SAADC_GAIN1_4;
+//    channel_2_config.reference = NRF_SAADC_REFERENCE_VDD4;
 	
-    nrf_saadc_channel_config_t channel_3_config =
-        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN7);
-    channel_3_config.gain = NRF_SAADC_GAIN1_4;
-    channel_3_config.reference = NRF_SAADC_REFERENCE_VDD4;				
+//    nrf_saadc_channel_config_t channel_3_config =
+//        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN7);
+//    channel_3_config.gain = NRF_SAADC_GAIN1_4;
+//    channel_3_config.reference = NRF_SAADC_REFERENCE_VDD4;				
 	
     err_code = nrf_drv_saadc_init(&saadc_config, saadc_callback);
     APP_ERROR_CHECK(err_code);
 
-    err_code = nrf_drv_saadc_channel_init(0, &channel_0_config);
-    APP_ERROR_CHECK(err_code);
+//    err_code = nrf_drv_saadc_channel_init(0, &channel_0_config);
+//    APP_ERROR_CHECK(err_code);
     err_code = nrf_drv_saadc_channel_init(1, &channel_1_config);
     APP_ERROR_CHECK(err_code);
-    err_code = nrf_drv_saadc_channel_init(2, &channel_2_config);
-    APP_ERROR_CHECK(err_code);
-    err_code = nrf_drv_saadc_channel_init(3, &channel_3_config);
-    APP_ERROR_CHECK(err_code);	
+//    err_code = nrf_drv_saadc_channel_init(2, &channel_2_config);
+//    APP_ERROR_CHECK(err_code);
+//    err_code = nrf_drv_saadc_channel_init(3, &channel_3_config);
+//    APP_ERROR_CHECK(err_code);	
 
     err_code = nrf_drv_saadc_buffer_convert(m_buffer_pool[0],SAADC_SAMPLES_IN_BUFFER);
     APP_ERROR_CHECK(err_code);   
-    err_code = nrf_drv_saadc_buffer_convert(m_buffer_pool[1],SAADC_SAMPLES_IN_BUFFER);
-    APP_ERROR_CHECK(err_code);
+//    err_code = nrf_drv_saadc_buffer_convert(m_buffer_pool[1],SAADC_SAMPLES_IN_BUFFER);
+//    APP_ERROR_CHECK(err_code);
 }
 
 /**@brief Application main function.
@@ -843,7 +848,7 @@ int main(void)
 
     // Initialize.
     uart_init();
-    log_init();
+//    log_init();
     timers_init();
     buttons_leds_init(&erase_bonds);
     power_management_init();
@@ -858,9 +863,12 @@ int main(void)
     saadc_init();
     saadc_sampling_event_enable();
 
+    nrf_gpio_cfg_output(LED_1);
+    nrf_gpio_pin_clear(LED_1);
+
     // Start execution.
-    printf("\r\nUART started.\r\n");
-    NRF_LOG_INFO("Debug logging for UART over RTT started.");
+//    printf("\r\nUART started.\r\n");
+//    NRF_LOG_INFO("Debug logging for UART over RTT started.");
     advertising_start();
 
     // Enter main loop.
